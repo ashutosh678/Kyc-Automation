@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { IncomingForm, File as FormidableFile, Files } from "formidable";
-import { ApiError, NotFound, InternalServerError } from "../utils/apiError";
 import CompanyDetails from "../models/companyDetails.model";
 import File from "../models/file.model";
 import { CompanyDetailsInput } from "../types/file.types";
@@ -37,7 +36,7 @@ const createFileDocument = async (
 		return file._id as string;
 	} catch (error) {
 		console.error("Error creating file document:", error);
-		throw new InternalServerError("Failed to create file document");
+		throw new Error("Failed to create file document");
 	}
 };
 
@@ -57,12 +56,10 @@ export const createCompanyDetails = async (
 			data: companyDetails,
 		});
 	} catch (error: unknown) {
-		if (error instanceof ApiError) {
-			ApiError.handle(error, res);
-		} else if (error instanceof Error) {
-			next(new InternalServerError(error.message));
+		if (error instanceof Error) {
+			next(new Error(error.message));
 		} else {
-			next(new InternalServerError("An unknown error occurred"));
+			next(new Error("An unknown error occurred"));
 		}
 	}
 };
@@ -83,7 +80,7 @@ export const getCompanyDetails = async (
 			.populate("constitution.fileId");
 
 		if (!companyDetails) {
-			return next(new NotFound("Company details not found"));
+			return next(new Error("Company details not found"));
 		}
 
 		res.status(200).json({
@@ -91,12 +88,10 @@ export const getCompanyDetails = async (
 			data: companyDetails,
 		});
 	} catch (error: unknown) {
-		if (error instanceof ApiError) {
-			ApiError.handle(error, res);
-		} else if (error instanceof Error) {
-			next(new InternalServerError(error.message));
+		if (error instanceof Error) {
+			next(new Error(error.message));
 		} else {
-			next(new InternalServerError("An unknown error occurred"));
+			next(new Error("An unknown error occurred"));
 		}
 	}
 };
@@ -116,7 +111,7 @@ export const updateCompanyDetails = async (
 		);
 
 		if (!companyDetails) {
-			return next(new NotFound("Company details not found"));
+			return next(new Error("Company details not found"));
 		}
 
 		res.status(200).json({
@@ -125,12 +120,10 @@ export const updateCompanyDetails = async (
 			data: companyDetails,
 		});
 	} catch (error: unknown) {
-		if (error instanceof ApiError) {
-			ApiError.handle(error, res);
-		} else if (error instanceof Error) {
-			next(new InternalServerError(error.message));
+		if (error instanceof Error) {
+			next(new Error(error.message));
 		} else {
-			next(new InternalServerError("An unknown error occurred"));
+			next(new Error("An unknown error occurred"));
 		}
 	}
 };
