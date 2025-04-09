@@ -1,0 +1,24 @@
+import express, { Express, Request, Response, NextFunction } from "express";
+import cors from "cors";
+import companyDetailsRoutes from "./routes/companyDetails.routes";
+import { errorHandler } from "./middleware/error.middleware";
+import config from "./config/app.config";
+
+const app: Express = express();
+
+// Middleware
+app.use(cors(config.corsOptions));
+app.use(express.json());
+
+// Routes
+app.use("/api/company-details", companyDetailsRoutes);
+
+// Health check endpoint
+app.get("/health", (req: Request, res: Response) => {
+	res.json({ status: "ok" });
+});
+
+// Error handling
+app.use(errorHandler);
+
+export default app;
