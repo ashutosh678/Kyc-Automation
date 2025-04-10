@@ -1,9 +1,9 @@
 import { IncomingForm, Files } from "formidable";
-import { AppError } from "../utils/AppError";
 import File from "../models/file.model";
 import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
 import { CloudinaryService } from "./cloudinary.service";
+import { FileType } from "../enums/fileTypes.enum";
 
 const cloudinaryService = new CloudinaryService();
 
@@ -12,26 +12,20 @@ const getOptionalFieldValue = (
 	fieldName: string
 ): string | undefined => {
 	const value = fields[fieldName];
-	if (!value) return undefined;
 	return Array.isArray(value) ? value[0] : value;
 };
 
 const createFileDocument = async (
 	fileUrl: string,
 	originalFilename: string,
-	fileType: string
+	fileType: FileType
 ): Promise<string> => {
-	try {
-		const file = await File.create({
-			fileName: originalFilename,
-			fileUrl: fileUrl,
-			fileType: fileType,
-		});
-		return file._id as string;
-	} catch (error) {
-		console.error("Error creating file document:", error);
-		throw new AppError("Failed to create file document", 500);
-	}
+	const file = await File.create({
+		fileName: originalFilename,
+		fileUrl: fileUrl,
+		fileType: fileType,
+	});
+	return file._id as string;
 };
 
 export const parseForm = (req: any): Promise<{ fields: any; files: Files }> => {
@@ -44,8 +38,7 @@ export const parseForm = (req: any): Promise<{ fields: any; files: Files }> => {
 	return new Promise((resolve, reject) => {
 		form.parse(req, (err, fields, files) => {
 			if (err) {
-				console.error("Form parsing error:", err);
-				reject(new AppError(`Error parsing form data: ${err.message}`, 400));
+				reject(new Error(`Error parsing form data: ${err.message}`));
 			} else {
 				resolve({ fields, files });
 			}
@@ -58,31 +51,23 @@ export const uploadFilesAndCreateDocuments = async (files: Files) => {
 	const fileIds: { [key: string]: string } = {};
 
 	for (const [key, file] of Object.entries(files)) {
-		try {
-			const fileObj = Array.isArray(file) ? file[0] : file;
-			if (!fileObj || !fileObj.filepath) {
-				console.warn(`Skipping invalid file for ${key}`);
-				continue;
-			}
-
-			// Upload to Cloudinary
-			console.log(`Uploading file for ${key}...`);
-			const cloudinaryUrl = await cloudinaryService.uploadFile(fileObj);
-			console.log(`Cloudinary URL for ${key}:`, cloudinaryUrl);
-			uploadedFiles[key] = cloudinaryUrl;
-
-			// Create File document
-			console.log(`Creating file document for ${key}...`);
-			const fileId = await createFileDocument(
-				cloudinaryUrl,
-				fileObj.originalFilename || "unknown",
-				fileObj.mimetype || "application/octet-stream"
-			);
-			console.log(`Created file document with ID ${fileId} for ${key}`);
-			fileIds[key] = fileId;
-		} catch (error) {
-			console.error(`Error processing file ${key}:`, error);
+		const fileObj = Array.isArray(file) ? file[0] : file;
+		if (!fileObj || !fileObj.filepath) {
+			console.warn(`Skipping invalid file for ${key}`);
+			continue;
 		}
+
+		// Upload to Cloudinary
+		const cloudinaryUrl = await cloudinaryService.uploadFile(fileObj);
+		uploadedFiles[key] = cloudinaryUrl;
+
+		// Create File document
+		const fileId = await createFileDocument(
+			cloudinaryUrl,
+			fileObj.originalFilename || "unknown",
+			key as FileType
+		);
+		fileIds[key] = fileId;
 	}
 
 	return { uploadedFiles, fileIds };
@@ -169,8 +154,6 @@ export const createCompanyDetails = async (
 			fileId: fileIds["alternativeCompanyName2"],
 		};
 	}
-
-	console.log("Company details data to save:", companyDetailsData);
 
 	const companyDetails = new CompanyDetails(companyDetailsData);
 	await companyDetails.save();

@@ -1,9 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { FileType } from "../enums/fileTypes.enum";
 
 export interface IFile extends Document {
 	fileName: string;
 	fileUrl: string;
-	fileType: string;
+	fileType: FileType;
 	uploadDate: Date;
 }
 
@@ -18,6 +19,7 @@ const FileSchema: Schema = new Schema({
 	},
 	fileType: {
 		type: String,
+		enum: Object.values(FileType),
 		required: true,
 	},
 	uploadDate: {
