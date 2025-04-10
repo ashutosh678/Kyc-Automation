@@ -19,6 +19,7 @@
 		"@types/formidable": "^3.4.5",
 		"@types/jsonwebtoken": "^9.0.9",
 		"@types/node": "^20.11.24",
+		"@types/winston": "^2.4.4",
 		"nodemon": "^3.1.0",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.3.3"

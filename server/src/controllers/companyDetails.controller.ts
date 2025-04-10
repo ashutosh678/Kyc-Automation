@@ -10,6 +10,7 @@ import {
 	uploadFilesAndCreateDocuments,
 	createCompanyDetails as createCompanyDetailsService,
 } from "../services/companyDetails.service";
+import { logger } from "../utils/logger";
 
 const cloudinaryService = new CloudinaryService();
 
@@ -45,9 +46,12 @@ export const createCompanyDetails = async (
 	res: Response,
 	next: NextFunction
 ): Promise<void> => {
+	logger.info("Received request to create company details");
 	try {
 		const { fields, files } = await parseForm(req);
+		logger.info("Parsed form data", { fields, files });
 		const { fileIds } = await uploadFilesAndCreateDocuments(files);
+		logger.info("Uploaded files and created documents", { fileIds });
 		const companyDetails = await createCompanyDetailsService(fields, fileIds);
 
 		res.status(201).json({
@@ -56,6 +60,7 @@ export const createCompanyDetails = async (
 			data: companyDetails,
 		});
 	} catch (error: unknown) {
+		logger.error("Error creating company details", { error });
 		if (error instanceof Error) {
 			next(new Error(error.message));
 		} else {
@@ -69,6 +74,7 @@ export const getCompanyDetails = async (
 	res: Response,
 	next: NextFunction
 ): Promise<void> => {
+	logger.info("Received request to get company details", { id: req.params.id });
 	try {
 		const companyDetails = await CompanyDetails.findById(req.params.id)
 			.populate("intendedCompanyName.fileId")
@@ -80,6 +86,7 @@ export const getCompanyDetails = async (
 			.populate("constitution.fileId");
 
 		if (!companyDetails) {
+			logger.warn("Company details not found", { id: req.params.id });
 			return next(new Error("Company details not found"));
 		}
 
@@ -88,6 +95,7 @@ export const getCompanyDetails = async (
 			data: companyDetails,
 		});
 	} catch (error: unknown) {
+		logger.error("Error fetching company details", { error });
 		if (error instanceof Error) {
 			next(new Error(error.message));
 		} else {
@@ -101,6 +109,9 @@ export const updateCompanyDetails = async (
 	res: Response,
 	next: NextFunction
 ): Promise<void> => {
+	logger.info("Received request to update company details", {
+		id: req.params.id,
+	});
 	try {
 		const companyDetailsData: Partial<CompanyDetailsInput> = req.body;
 
@@ -111,6 +122,9 @@ export const updateCompanyDetails = async (
 		);
 
 		if (!companyDetails) {
+			logger.warn("Company details not found for update", {
+				id: req.params.id,
+			});
 			return next(new Error("Company details not found"));
 		}
 
@@ -120,6 +134,7 @@ export const updateCompanyDetails = async (
 			data: companyDetails,
 		});
 	} catch (error: unknown) {
+		logger.error("Error updating company details", { error });
 		if (error instanceof Error) {
 			next(new Error(error.message));
 		} else {
