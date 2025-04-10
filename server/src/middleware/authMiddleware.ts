@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_for_dev";
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
 	user?: any;
 }
 
@@ -24,6 +24,7 @@ export const authenticateJWT = (
 				return res.status(403).json({ message: "Forbidden: Invalid token" });
 			}
 
+			logger.info("Authenticated user", { user });
 			req.user = user;
 			next();
 		});

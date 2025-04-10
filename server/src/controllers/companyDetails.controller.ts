@@ -1,60 +1,42 @@
 import { Request, Response, NextFunction } from "express";
-import { IncomingForm, File as FormidableFile, Files } from "formidable";
-import CompanyDetails from "../models/companyDetails.model";
-import File from "../models/file.model";
-import { CompanyDetailsInput } from "../types/file.types";
-import { CloudinaryService } from "../services/cloudinary.service";
-import mongoose from "mongoose";
 import {
 	parseForm,
 	uploadFilesAndCreateDocuments,
 	createCompanyDetails as createCompanyDetailsService,
 } from "../services/companyDetails.service";
 import { logger } from "../utils/logger";
-
-const cloudinaryService = new CloudinaryService();
-
-const getOptionalFieldValue = (
-	fields: any,
-	fieldName: string
-): string | undefined => {
-	const value = fields[fieldName];
-	if (!value) return undefined;
-	return Array.isArray(value) ? value[0] : value;
-};
-
-const createFileDocument = async (
-	fileUrl: string,
-	originalFilename: string,
-	fileType: string
-): Promise<string> => {
-	try {
-		const file = await File.create({
-			fileName: originalFilename,
-			fileUrl: fileUrl,
-			fileType: fileType,
-		});
-		return file._id as string;
-	} catch (error) {
-		console.error("Error creating file document:", error);
-		throw new Error("Failed to create file document");
-	}
-};
+import { AuthenticatedRequest } from "../middleware/authMiddleware";
+import CompanyDetails from "../models/companyDetails.model";
+import { CompanyDetailsInput } from "../types/file.types";
 
 export const createCompanyDetails = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 	next: NextFunction
-): Promise<void> => {
+): Promise<Response | void> => {
 	logger.info("Received request to create company details");
 	try {
 		const { fields, files } = await parseForm(req);
 		logger.info("Parsed form data", { fields, files });
 		const { fileIds } = await uploadFilesAndCreateDocuments(files);
 		logger.info("Uploaded files and created documents", { fileIds });
-		const companyDetails = await createCompanyDetailsService(fields, fileIds);
 
-		res.status(201).json({
+		// Extract userId from the authenticated user context
+		const userId = req.user?.userId;
+		if (!userId) {
+			logger.error("User ID not found in request context");
+			return res.status(400).json({ message: "User ID is required" });
+		}
+
+		logger.info("Creating company details with fields", {
+			fields: { ...fields, userId },
+		});
+		const companyDetails = await createCompanyDetailsService(
+			{ ...fields, userId },
+			fileIds
+		);
+
+		return res.status(201).json({
 			success: true,
 			message: "Company details created successfully",
 			data: companyDetails,
@@ -62,9 +44,9 @@ export const createCompanyDetails = async (
 	} catch (error: unknown) {
 		logger.error("Error creating company details", { error });
 		if (error instanceof Error) {
-			next(new Error(error.message));
+			return next(new Error(error.message));
 		} else {
-			next(new Error("An unknown error occurred"));
+			return next(new Error("An unknown error occurred"));
 		}
 	}
 };

@@ -14,9 +14,10 @@ export interface FileUploadResponse {
 }
 
 export interface CompanyDetailsInput {
-	intendedCompanyName: {
+	userId: mongoose.Types.ObjectId;
+	intendedCompanyName?: {
 		name: string;
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
 	};
 	alternativeCompanyName1?: {
 		name: string;

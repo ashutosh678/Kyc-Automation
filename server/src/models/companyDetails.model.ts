@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICompanyDetails extends Document {
+	userId: mongoose.Types.ObjectId;
 	intendedCompanyName?: {
 		name: string;
 		fileId: mongoose.Types.ObjectId;
@@ -35,6 +36,7 @@ export interface ICompanyDetails extends Document {
 
 const CompanyDetailsSchema: Schema = new Schema(
 	{
+		userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 		intendedCompanyName: {
 			name: { type: String },
 			fileId: { type: Schema.Types.ObjectId, ref: "File" },

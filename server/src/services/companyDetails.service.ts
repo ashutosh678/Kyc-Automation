@@ -155,6 +155,9 @@ export const createCompanyDetails = async (
 		};
 	}
 
+	// Include userId in companyDetailsData
+	companyDetailsData.userId = fields.userId;
+
 	const companyDetails = new CompanyDetails(companyDetailsData);
 	await companyDetails.save();
 
