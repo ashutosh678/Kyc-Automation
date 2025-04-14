@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, text } from "express";
 import {
 	parseForm,
 	uploadFilesAndCreateDocuments,
@@ -8,6 +8,8 @@ import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
+import { FileType } from "../enums/fileTypes.enum";
+import mongoose from "mongoose";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -18,7 +20,9 @@ export const createCompanyDetails = async (
 	try {
 		const { fields, files } = await parseForm(req);
 		logger.info("Parsed form data", { fields, files });
-		const { fileIds } = await uploadFilesAndCreateDocuments(files);
+
+		// Upload files and create documents
+		const { fileIds, fileTexts } = await uploadFilesAndCreateDocuments(files);
 		logger.info("Uploaded files and created documents", { fileIds });
 
 		// Extract userId from the authenticated user context
@@ -28,13 +32,35 @@ export const createCompanyDetails = async (
 			return res.status(400).json({ message: "User ID is required" });
 		}
 
-		logger.info("Creating company details with fields", {
-			fields: { ...fields, userId },
-		});
-		const companyDetails = await createCompanyDetailsService(
-			{ ...fields, userId },
-			fileIds
-		);
+		// Create company details with file URLs and text content
+		const companyDetailsData: Partial<CompanyDetailsInput> = {
+			userId,
+			intendedCompanyName: {
+				name: fields.intendedCompanyName || "Untitled",
+				fileId: new mongoose.Types.ObjectId(
+					fileIds[FileType.INTENDED_COMPANY_NAME]
+				),
+				text: fileTexts[FileType.INTENDED_COMPANY_NAME] || "", // Ensure text is included
+			},
+			companyActivities: {
+				description: fields.companyActivities || "No description",
+				fileId: new mongoose.Types.ObjectId(
+					fileIds[FileType.COMPANY_ACTIVITIES]
+				),
+				text: fileTexts[FileType.COMPANY_ACTIVITIES] || "", // Ensure text is included
+			},
+			intendedRegisteredAddress: {
+				address: fields.intendedRegisteredAddress || "No address",
+				fileId: new mongoose.Types.ObjectId(
+					fileIds[FileType.INTENDED_REGISTERED_ADDRESS]
+				),
+				text: fileTexts[FileType.INTENDED_REGISTERED_ADDRESS] || "", // Ensure text is included
+			},
+			// Add similar entries for other fields...
+		};
+
+		const companyDetails = new CompanyDetails(companyDetailsData);
+		await companyDetails.save();
 
 		return res.status(201).json({
 			success: true,

@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export interface FileUploadResponse {
 	success: boolean;
 	message: string;
@@ -18,29 +20,36 @@ export interface CompanyDetailsInput {
 	intendedCompanyName?: {
 		name: string;
 		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 	alternativeCompanyName1?: {
 		name: string;
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 	alternativeCompanyName2?: {
 		name: string;
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 	companyActivities: {
 		description: string;
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 	intendedRegisteredAddress: {
 		address: string;
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 	financialYearEnd: {
 		date: string;
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 	constitution: {
 		option: "i" | "ii" | "iii";
-		fileId: string;
+		fileId: mongoose.Types.ObjectId;
+		text?: string;
 	};
 }

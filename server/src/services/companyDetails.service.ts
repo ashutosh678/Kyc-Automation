@@ -4,6 +4,13 @@ import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
 import { CloudinaryService } from "./cloudinary.service";
 import { FileType } from "../enums/fileTypes.enum";
+import mongoose from "mongoose";
+import path from "path";
+import fs from "fs";
+import { AuthenticatedRequest } from "../middleware/authMiddleware";
+import { Request, Response, NextFunction } from "express";
+import { logger } from "../utils/logger";
+import { extractTextFromFiles } from "../middleware/file.middleware";
 
 const cloudinaryService = new CloudinaryService();
 
@@ -49,7 +56,15 @@ export const parseForm = (req: any): Promise<{ fields: any; files: Files }> => {
 export const uploadFilesAndCreateDocuments = async (files: Files) => {
 	const uploadedFiles: { [key: string]: string } = {};
 	const fileIds: { [key: string]: string } = {};
+	const fileTexts: { [key: string]: string } = {};
 
+	// Ensure files is of type Files
+	if (!files) {
+		throw new Error("No files uploaded");
+	}
+
+	// Extract text from files
+	const extractedTexts = await extractTextFromFiles(files);
 	for (const [key, file] of Object.entries(files)) {
 		const fileObj = Array.isArray(file) ? file[0] : file;
 		if (!fileObj || !fileObj.filepath) {
@@ -68,14 +83,18 @@ export const uploadFilesAndCreateDocuments = async (files: Files) => {
 			key as FileType
 		);
 		fileIds[key] = fileId;
+
+		// Store the extracted text
+		fileTexts[key] = extractedTexts[key] || ""; // Ensure text is included
 	}
 
-	return { uploadedFiles, fileIds };
+	return { uploadedFiles, fileIds, fileTexts }; // Return fileTexts along with fileIds
 };
 
 export const createCompanyDetails = async (
 	fields: any,
-	fileIds: { [key: string]: string }
+	fileIds: { [key: string]: string },
+	fileTexts: { [key: string]: string }
 ) => {
 	// Get all field values (all optional)
 	const intendedCompanyName = getOptionalFieldValue(
@@ -109,49 +128,68 @@ export const createCompanyDetails = async (
 	if (fileIds["intendedCompanyName"]) {
 		companyDetailsData.intendedCompanyName = {
 			name: intendedCompanyName || "Untitled",
-			fileId: fileIds["intendedCompanyName"],
+			fileId: new mongoose.Types.ObjectId(
+				fileIds[FileType.INTENDED_COMPANY_NAME]
+			),
+			text: fileTexts[FileType.INTENDED_COMPANY_NAME] || "",
 		};
+		console.log(
+			"-------------------------------------companyDetailsData.intendedCompanyName",
+			companyDetailsData.intendedCompanyName
+		);
 	}
 
 	if (fileIds["companyActivities"]) {
 		companyDetailsData.companyActivities = {
 			description: companyActivities || "No description",
-			fileId: fileIds["companyActivities"],
+			fileId: new mongoose.Types.ObjectId(fileIds[FileType.COMPANY_ACTIVITIES]),
+			text: fileTexts[FileType.COMPANY_ACTIVITIES] || "",
 		};
 	}
 
 	if (fileIds["intendedRegisteredAddress"]) {
 		companyDetailsData.intendedRegisteredAddress = {
 			address: intendedRegisteredAddress || "No address",
-			fileId: fileIds["intendedRegisteredAddress"],
+			fileId: new mongoose.Types.ObjectId(
+				fileIds[FileType.INTENDED_REGISTERED_ADDRESS]
+			),
+			text: fileTexts[FileType.INTENDED_REGISTERED_ADDRESS] || "",
 		};
 	}
 
 	if (fileIds["financialYearEnd"]) {
 		companyDetailsData.financialYearEnd = {
 			date: financialYearEnd || new Date().toISOString(),
-			fileId: fileIds["financialYearEnd"],
+			fileId: new mongoose.Types.ObjectId(fileIds[FileType.FINANCIAL_YEAR_END]),
+			text: fileTexts[FileType.FINANCIAL_YEAR_END] || "",
 		};
 	}
 
 	if (fileIds["constitution"]) {
 		companyDetailsData.constitution = {
 			option: constitution || "i",
-			fileId: fileIds["constitution"],
+			fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
+			text: fileTexts[FileType.CONSTITUTION] || "",
 		};
 	}
 
 	if (fileIds["alternativeCompanyName1"]) {
 		companyDetailsData.alternativeCompanyName1 = {
 			name: alternativeCompanyName1 || "Alternative 1",
-			fileId: fileIds["alternativeCompanyName1"],
+			fileId: new mongoose.Types.ObjectId(
+				fileIds[FileType.ALTERNATIVE_COMPANY_NAME_1]
+			),
+			text: fileTexts[FileType.ALTERNATIVE_COMPANY_NAME_1] || "",
 		};
 	}
 
 	if (fileIds["alternativeCompanyName2"]) {
 		companyDetailsData.alternativeCompanyName2 = {
 			name: alternativeCompanyName2 || "Alternative 2",
-			fileId: fileIds["alternativeCompanyName2"],
+			fileId: new mongoose.Types.ObjectId(
+				fileIds[FileType.ALTERNATIVE_COMPANY_NAME_2]
+			),
+			text: fileTexts[FileType.ALTERNATIVE_COMPANY_NAME_2] || "",
 		};
 	}
 
@@ -160,6 +198,8 @@ export const createCompanyDetails = async (
 
 	const companyDetails = new CompanyDetails(companyDetailsData);
 	await companyDetails.save();
+
+	logger.info("companyDetails", companyDetails);
 
 	return companyDetails;
 };
