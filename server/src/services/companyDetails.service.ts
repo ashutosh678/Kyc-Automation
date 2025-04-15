@@ -10,6 +10,10 @@ import {
 	uploadFilesAndCreateDocuments,
 } from "../middleware/file.middleware";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
+import { prompts } from "../types/prompts";
+import { GoogleGeminiService } from "./googleAI.service";
+
+const googleGeminiService = new GoogleGeminiService();
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest
@@ -32,30 +36,52 @@ export const createCompanyDetails = async (
 	};
 
 	// Helper function to add fields to companyDetailsData
-	const addField = (
-		fieldKey: FileType,
-		fieldName: string,
-		fieldValue: string
-	) => {
+	const addField = async (fieldKey: FileType, fieldName: string) => {
 		if (fileIds[fieldKey]) {
-			companyDetailsData[fieldKey] = {
-				fileId: new mongoose.Types.ObjectId(fileIds[fieldKey]),
-				text: fileTexts[fieldKey] || "",
-				[fieldName]: fieldValue,
-			} as any;
+			const prompt = `${prompts[fieldKey]}\n\nPlease return only the value for "${fieldName}" without any additional formatting.`;
+			const textToSummarize = fileTexts[fieldKey] || "";
+
+			// Call the summarization service with the prompt and text
+			const fieldValue = await googleGeminiService.summarizeText(
+				textToSummarize,
+				prompt
+			);
+
+			// Parse the response to extract the value
+			let parsedValue;
+			try {
+				const jsonResponse = JSON.parse(fieldValue);
+				parsedValue = jsonResponse[fieldName]; // Extract the specific field value
+			} catch (error) {
+				logger.error("Error parsing JSON response", { fieldValue, error });
+				parsedValue = fieldValue; // Fallback to raw value if parsing fails
+			}
+
+			// Only add the field if it has a value
+			if (parsedValue) {
+				companyDetailsData[fieldKey] = {
+					fileId: new mongoose.Types.ObjectId(fileIds[fieldKey]),
+					text: fileTexts[fieldKey] || "",
+					[fieldName]: parsedValue,
+				} as any;
+			} else {
+				logger.warn(`Field ${fieldName} is empty and will not be added.`);
+			}
 		} else {
 			logger.warn(`Field ${fieldKey} not found in uploaded files`);
 		}
 	};
 
 	// Add fields using the helper function
-	addField(FileType.INTENDED_COMPANY_NAME, "name", "Untitled");
-	addField(FileType.COMPANY_ACTIVITIES, "description", "No description");
-	addField(FileType.INTENDED_REGISTERED_ADDRESS, "address", "No address");
-	addField(FileType.FINANCIAL_YEAR_END, "date", new Date().toISOString());
-	addField(FileType.CONSTITUTION, "option", "i");
-	addField(FileType.ALTERNATIVE_COMPANY_NAME_1, "name", "Alternative 1");
-	addField(FileType.ALTERNATIVE_COMPANY_NAME_2, "name", "Alternative 2");
+	await Promise.all([
+		addField(FileType.INTENDED_COMPANY_NAME, "name"),
+		addField(FileType.COMPANY_ACTIVITIES, "description"),
+		addField(FileType.INTENDED_REGISTERED_ADDRESS, "address"),
+		addField(FileType.FINANCIAL_YEAR_END, "date"),
+		addField(FileType.CONSTITUTION, "option"),
+		addField(FileType.ALTERNATIVE_COMPANY_NAME_1, "name"),
+		addField(FileType.ALTERNATIVE_COMPANY_NAME_2, "name"),
+	]);
 
 	const companyDetails = new CompanyDetails(companyDetailsData);
 	await companyDetails.save();
