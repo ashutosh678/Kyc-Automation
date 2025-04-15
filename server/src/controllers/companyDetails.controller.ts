@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction, text } from "express";
-import {
-	parseForm,
-	uploadFilesAndCreateDocuments,
-	createCompanyDetails as createCompanyDetailsService,
-} from "../services/companyDetails.service";
+import { createCompanyDetails as createCompanyDetailsService } from "../services/companyDetails.service";
 import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
 import { FileType } from "../enums/fileTypes.enum";
 import mongoose from "mongoose";
+import {
+	parseForm,
+	uploadFilesAndCreateDocuments,
+} from "../middleware/file.middleware";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -35,33 +35,50 @@ export const createCompanyDetails = async (
 		// Create company details with file URLs and text content
 		const companyDetailsData: Partial<CompanyDetailsInput> = {
 			userId,
-			intendedCompanyName: {
-				name: fields.intendedCompanyName || "Untitled",
-				fileId: new mongoose.Types.ObjectId(
-					fileIds[FileType.INTENDED_COMPANY_NAME]
-				),
-				text: fileTexts[FileType.INTENDED_COMPANY_NAME] || "", // Ensure text is included
-			},
-			companyActivities: {
-				description: fields.companyActivities || "No description",
-				fileId: new mongoose.Types.ObjectId(
-					fileIds[FileType.COMPANY_ACTIVITIES]
-				),
-				text: fileTexts[FileType.COMPANY_ACTIVITIES] || "", // Ensure text is included
-			},
-			intendedRegisteredAddress: {
-				address: fields.intendedRegisteredAddress || "No address",
-				fileId: new mongoose.Types.ObjectId(
-					fileIds[FileType.INTENDED_REGISTERED_ADDRESS]
-				),
-				text: fileTexts[FileType.INTENDED_REGISTERED_ADDRESS] || "", // Ensure text is included
-			},
-			// Add similar entries for other fields...
 		};
 
+		// Helper function to add fields to companyDetailsData
+		const addField = (
+			fieldKey: FileType,
+			fieldName: string,
+			defaultValue: string,
+			extraField?: string
+		) => {
+			if (fileIds[fieldKey]) {
+				companyDetailsData[fieldKey] = {
+					fileId: new mongoose.Types.ObjectId(fileIds[fieldKey]),
+					text: fileTexts[fieldKey] || "",
+					[fieldName]: fields[extraField || fieldName] || defaultValue,
+				} as any; // Use 'as any' to bypass TypeScript error temporarily
+			} else {
+				logger.warn(`Field ${fieldKey} not found in uploaded files`);
+			}
+		};
+
+		// Add fields using the helper function
+		addField(FileType.INTENDED_COMPANY_NAME, "name", "Untitled");
+		addField(FileType.COMPANY_ACTIVITIES, "description", "No description");
+		addField(FileType.INTENDED_REGISTERED_ADDRESS, "address", "No address");
+		addField(FileType.FINANCIAL_YEAR_END, "date", new Date().toISOString());
+		addField(FileType.CONSTITUTION, "option", "i");
+		addField(
+			FileType.ALTERNATIVE_COMPANY_NAME_1,
+			"name",
+			"Alternative 1",
+			"alternativeCompanyName1"
+		);
+		addField(
+			FileType.ALTERNATIVE_COMPANY_NAME_2,
+			"name",
+			"Alternative 2",
+			"alternativeCompanyName2"
+		);
+
+		// Create and save the company details
 		const companyDetails = new CompanyDetails(companyDetailsData);
 		await companyDetails.save();
 
+		logger.info("Company details created successfully", { companyDetails });
 		return res.status(201).json({
 			success: true,
 			message: "Company details created successfully",
