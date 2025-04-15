@@ -1,5 +1,4 @@
-import { Request, Response, NextFunction, text } from "express";
-import { createCompanyDetails as createCompanyDetailsService } from "../services/companyDetails.service";
+import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import CompanyDetails from "../models/companyDetails.model";

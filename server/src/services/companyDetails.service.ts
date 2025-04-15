@@ -1,20 +1,14 @@
-import { IncomingForm, Files } from "formidable";
-import File from "../models/file.model";
 import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
-import { CloudinaryService } from "./cloudinary.service";
 import { FileType } from "../enums/fileTypes.enum";
 import mongoose from "mongoose";
 import { logger } from "../utils/logger";
 import {
-	extractTextFromFiles,
 	parseForm,
 	uploadFilesAndCreateDocuments,
 } from "../middleware/file.middleware";
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
-
-const cloudinaryService = new CloudinaryService();
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
