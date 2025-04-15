@@ -74,3 +74,43 @@ export const createCompanyDetails = async (
 	logger.info("Company details created successfully", { companyDetails });
 	return companyDetails;
 };
+
+export const getCompanyDetails = async (
+	id: string
+): Promise<ICompanyDetails | null> => {
+	logger.info("Fetching company details", { id });
+	const companyDetails = await CompanyDetails.findById(id)
+		.populate("intendedCompanyName.fileId")
+		.populate("alternativeCompanyName1.fileId")
+		.populate("alternativeCompanyName2.fileId")
+		.populate("companyActivities.fileId")
+		.populate("intendedRegisteredAddress.fileId")
+		.populate("financialYearEnd.fileId")
+		.populate("constitution.fileId");
+
+	if (!companyDetails) {
+		logger.warn("Company details not found", { id });
+		throw new Error("Company details not found");
+	}
+
+	return companyDetails;
+};
+
+export const updateCompanyDetails = async (
+	id: string,
+	companyDetailsData: Partial<CompanyDetailsInput>
+): Promise<ICompanyDetails | null> => {
+	logger.info("Updating company details", { id });
+	const companyDetails = await CompanyDetails.findByIdAndUpdate(
+		id,
+		companyDetailsData,
+		{ new: true, runValidators: true }
+	);
+
+	if (!companyDetails) {
+		logger.warn("Company details not found for update", { id });
+		throw new Error("Company details not found");
+	}
+
+	return companyDetails;
+};

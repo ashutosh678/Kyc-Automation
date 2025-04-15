@@ -3,7 +3,11 @@ import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
-import { createCompanyDetails as createCompanyDetailsService } from "../services/companyDetails.service";
+import {
+	createCompanyDetails as createCompanyDetailsService,
+	getCompanyDetails as getCompanyDetailsService,
+	updateCompanyDetails as updateCompanyDetailsService,
+} from "../services/companyDetails.service";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -36,20 +40,7 @@ export const getCompanyDetails = async (
 	logger.info("Received request to get company details", { id: req.params.id });
 
 	try {
-		const companyDetails = await CompanyDetails.findById(req.params.id)
-			.populate("intendedCompanyName.fileId")
-			.populate("alternativeCompanyName1.fileId")
-			.populate("alternativeCompanyName2.fileId")
-			.populate("companyActivities.fileId")
-			.populate("intendedRegisteredAddress.fileId")
-			.populate("financialYearEnd.fileId")
-			.populate("constitution.fileId");
-
-		if (!companyDetails) {
-			logger.warn("Company details not found", { id: req.params.id });
-			return next(new Error("Company details not found"));
-		}
-
+		const companyDetails = await getCompanyDetailsService(req.params.id);
 		res.status(200).json({
 			success: true,
 			data: companyDetails,
@@ -74,19 +65,10 @@ export const updateCompanyDetails = async (
 	});
 	try {
 		const companyDetailsData: Partial<CompanyDetailsInput> = req.body;
-
-		const companyDetails = await CompanyDetails.findByIdAndUpdate(
+		const companyDetails = await updateCompanyDetailsService(
 			req.params.id,
-			companyDetailsData,
-			{ new: true, runValidators: true }
+			companyDetailsData
 		);
-
-		if (!companyDetails) {
-			logger.warn("Company details not found for update", {
-				id: req.params.id,
-			});
-			return next(new Error("Company details not found"));
-		}
 
 		res.status(200).json({
 			success: true,
