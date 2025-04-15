@@ -1,9 +1,9 @@
 // server/src/services/googleGemini.service.ts
-import { GoogleGenAI } from "@google/genai"; // Ensure you have the correct package installed
+import { GoogleGenAI } from "@google/genai";
 import { AppError } from "../utils/AppError";
 import { logger } from "../utils/logger";
 
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY; // Ensure you have your API key in the environment variables
+const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
 
 export class GoogleGeminiService {
 	private ai: GoogleGenAI;

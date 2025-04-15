@@ -3,16 +3,7 @@ import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
-import { FileType } from "../enums/fileTypes.enum";
-import mongoose from "mongoose";
-import {
-	parseForm,
-	uploadFilesAndCreateDocuments,
-} from "../middleware/file.middleware";
-import { GoogleGeminiService } from "../services/googleAI.service";
-
-// Initialize the Google Gemini service
-const googleGeminiService = new GoogleGeminiService();
+import { createCompanyDetails as createCompanyDetailsService } from "../services/companyDetails.service";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -21,67 +12,7 @@ export const createCompanyDetails = async (
 ): Promise<Response | void> => {
 	logger.info("Received request to create company details");
 	try {
-		const { fields, files } = await parseForm(req);
-		logger.info("Parsed form data", { fields, files });
-
-		// Upload files and create documents
-		const { fileIds, fileTexts } = await uploadFilesAndCreateDocuments(files);
-		logger.info("Uploaded files and created documents", { fileIds });
-
-		// Extract userId from the authenticated user context
-		const userId = req.user?.userId;
-		if (!userId) {
-			logger.error("User ID not found in request context");
-			return res.status(400).json({ message: "User ID is required" });
-		}
-
-		// Create company details with file URLs and text content
-		const companyDetailsData: Partial<CompanyDetailsInput> = {
-			userId,
-		};
-
-		// Helper function to add fields to companyDetailsData
-		const addField = (
-			fieldKey: FileType,
-			fieldName: string,
-			defaultValue: string,
-			extraField?: string
-		) => {
-			if (fileIds[fieldKey]) {
-				companyDetailsData[fieldKey] = {
-					fileId: new mongoose.Types.ObjectId(fileIds[fieldKey]),
-					text: fileTexts[fieldKey] || "",
-					[fieldName]: fields[extraField || fieldName] || defaultValue,
-				} as any; // Use 'as any' to bypass TypeScript error temporarily
-			} else {
-				logger.warn(`Field ${fieldKey} not found in uploaded files`);
-			}
-		};
-
-		// Add fields using the helper function
-		addField(FileType.INTENDED_COMPANY_NAME, "name", "Untitled");
-		addField(FileType.COMPANY_ACTIVITIES, "description", "No description");
-		addField(FileType.INTENDED_REGISTERED_ADDRESS, "address", "No address");
-		addField(FileType.FINANCIAL_YEAR_END, "date", new Date().toISOString());
-		addField(FileType.CONSTITUTION, "option", "i");
-		addField(
-			FileType.ALTERNATIVE_COMPANY_NAME_1,
-			"name",
-			"Alternative 1",
-			"alternativeCompanyName1"
-		);
-		addField(
-			FileType.ALTERNATIVE_COMPANY_NAME_2,
-			"name",
-			"Alternative 2",
-			"alternativeCompanyName2"
-		);
-
-		// Create and save the company details
-		const companyDetails = new CompanyDetails(companyDetailsData);
-		await companyDetails.save();
-
-		logger.info("Company details created successfully", { companyDetails });
+		const companyDetails = await createCompanyDetailsService(req);
 		return res.status(201).json({
 			success: true,
 			message: "Company details created successfully",
