@@ -35,14 +35,13 @@ export const createCompanyDetails = async (
 	const addField = (
 		fieldKey: FileType,
 		fieldName: string,
-		defaultValue: string,
-		extraField?: string
+		fieldValue: string
 	) => {
 		if (fileIds[fieldKey]) {
 			companyDetailsData[fieldKey] = {
 				fileId: new mongoose.Types.ObjectId(fileIds[fieldKey]),
 				text: fileTexts[fieldKey] || "",
-				[fieldName]: fields[extraField || fieldName] || defaultValue,
+				[fieldName]: fieldValue,
 			} as any;
 		} else {
 			logger.warn(`Field ${fieldKey} not found in uploaded files`);
@@ -55,18 +54,8 @@ export const createCompanyDetails = async (
 	addField(FileType.INTENDED_REGISTERED_ADDRESS, "address", "No address");
 	addField(FileType.FINANCIAL_YEAR_END, "date", new Date().toISOString());
 	addField(FileType.CONSTITUTION, "option", "i");
-	addField(
-		FileType.ALTERNATIVE_COMPANY_NAME_1,
-		"name",
-		"Alternative 1",
-		"alternativeCompanyName1"
-	);
-	addField(
-		FileType.ALTERNATIVE_COMPANY_NAME_2,
-		"name",
-		"Alternative 2",
-		"alternativeCompanyName2"
-	);
+	addField(FileType.ALTERNATIVE_COMPANY_NAME_1, "name", "Alternative 1");
+	addField(FileType.ALTERNATIVE_COMPANY_NAME_2, "name", "Alternative 2");
 
 	const companyDetails = new CompanyDetails(companyDetailsData);
 	await companyDetails.save();

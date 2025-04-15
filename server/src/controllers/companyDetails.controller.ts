@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
-import CompanyDetails from "../models/companyDetails.model";
 import { CompanyDetailsInput } from "../types/file.types";
 import {
 	createCompanyDetails as createCompanyDetailsService,
