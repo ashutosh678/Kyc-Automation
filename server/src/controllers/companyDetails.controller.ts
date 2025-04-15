@@ -9,6 +9,10 @@ import {
 	parseForm,
 	uploadFilesAndCreateDocuments,
 } from "../middleware/file.middleware";
+import { GoogleGeminiService } from "../services/googleAI.service";
+
+// Initialize the Google Gemini service
+const googleGeminiService = new GoogleGeminiService();
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -99,6 +103,7 @@ export const getCompanyDetails = async (
 	next: NextFunction
 ): Promise<void> => {
 	logger.info("Received request to get company details", { id: req.params.id });
+
 	try {
 		const companyDetails = await CompanyDetails.findById(req.params.id)
 			.populate("intendedCompanyName.fileId")
