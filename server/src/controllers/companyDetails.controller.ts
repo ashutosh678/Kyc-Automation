@@ -1,13 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
-import { CompanyDetailsInput } from "../types/file.types";
 import {
 	createCompanyDetails as createCompanyDetailsService,
 	getCompanyDetails as getCompanyDetailsService,
 	updateCompanyDetails as updateCompanyDetailsService,
 } from "../services/companyDetails.service";
-import { ICompanyDetails } from "../models/companyDetails.model";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -65,7 +63,6 @@ export const updateCompanyDetails = async (
 	});
 	try {
 		const companyDetails = await updateCompanyDetailsService(req);
-		// Note: we're now just passing the req object, similar to create API
 
 		res.status(200).json({
 			success: true,
