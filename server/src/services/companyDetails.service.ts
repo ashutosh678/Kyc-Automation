@@ -3,6 +3,7 @@ import CompanyDetails, {
 } from "../models/companyDetails.model"; // Import the interface
 import { CompanyDetailsInput } from "../types/file.types";
 import { FileType } from "../enums/fileTypes.enum";
+import { ConstitutionOption } from "../enums/constitutionOptions.enum"; // Import the enum
 import mongoose from "mongoose";
 import { logger } from "../utils/logger";
 import {
@@ -34,6 +35,42 @@ export const createCompanyDetails = async (
 	const companyDetailsData: Partial<CompanyDetailsInput> = {
 		userId,
 	};
+
+	// Handle the constitution field
+	if (fields.option) {
+		logger.info(
+			"--------fields.constitution----------",
+			JSON.parse(fields.option[0])
+		);
+		const option = fields.option[0]; // Get option from the request body
+
+		// Check if option is provided
+		if (!option) {
+			logger.error("Constitution option is required but not provided.");
+			throw new Error("Constitution option is required.");
+		}
+
+		// Access the first element of the option array
+		const optionValue = Array.isArray(option) ? option[0] : option;
+
+		// Generate the description using the AI service
+		const descriptionPrompt = prompts.constitution; // Use the appropriate prompt
+		const descriptionText = await googleGeminiService.summarizeText(
+			fileTexts[FileType.CONSTITUTION] || "",
+			descriptionPrompt
+		);
+
+		// Add the constitution data
+		companyDetailsData.constitution = {
+			option: Number(optionValue) as ConstitutionOption, // Ensure option is converted to the enum
+			description: descriptionText, // Use the generated description
+			fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]), // Assuming you still want to keep the fileId
+			text: fileTexts[FileType.CONSTITUTION] || "",
+		};
+	} else {
+		logger.error("Constitution's option field is required but not provided.");
+		throw new Error("Constitution field is required.");
+	}
 
 	// Helper function to add fields to companyDetailsData
 	const addField = async (fieldKey: FileType, fieldName: string) => {
@@ -78,7 +115,7 @@ export const createCompanyDetails = async (
 		addField(FileType.COMPANY_ACTIVITIES, "description"),
 		addField(FileType.INTENDED_REGISTERED_ADDRESS, "address"),
 		addField(FileType.FINANCIAL_YEAR_END, "date"),
-		addField(FileType.CONSTITUTION, "option"),
+		// The constitution is now handled above
 		addField(FileType.ALTERNATIVE_COMPANY_NAME_1, "name"),
 		addField(FileType.ALTERNATIVE_COMPANY_NAME_2, "name"),
 	]);

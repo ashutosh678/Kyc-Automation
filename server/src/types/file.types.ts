@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ConstitutionOption } from "../enums/constitutionOptions.enum";
 
 export interface FileUploadResponse {
 	success: boolean;
@@ -48,7 +49,8 @@ export interface CompanyDetailsInput {
 		text?: string;
 	};
 	constitution: {
-		option: "i" | "ii" | "iii";
+		option: ConstitutionOption;
+		description: string;
 		fileId: mongoose.Types.ObjectId;
 		text?: string;
 	};

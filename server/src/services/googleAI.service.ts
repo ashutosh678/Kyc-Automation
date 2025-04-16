@@ -24,13 +24,6 @@ export class GoogleGeminiService {
 				contents: `${prompt} \n\n\n ${text}`,
 				config: {
 					responseMimeType: "application/json",
-					// responseSchema: {
-					// 	name: "string",
-					// 	description: "string",
-					// 	address: "string",
-					// 	date: "string",
-					// 	option: "string",
-					// },
 				},
 			});
 

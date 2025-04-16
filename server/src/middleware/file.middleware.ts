@@ -6,6 +6,7 @@ import { CloudinaryService } from "../services/cloudinary.service";
 import { FileType } from "../enums/fileTypes.enum";
 import { IncomingForm, Files } from "formidable";
 import File from "../models/file.model";
+import { logger } from "../utils/logger";
 
 const cloudinaryService = new CloudinaryService();
 
@@ -34,7 +35,29 @@ export const parseForm = (req: any): Promise<{ fields: any; files: Files }> => {
 			if (err) {
 				reject(new Error(`Error parsing form data: ${err.message}`));
 			} else {
-				resolve({ fields, files });
+				// Ensure that the constitution option is parsed correctly
+				let updatedFields = { ...fields }; // Create a new object to avoid modifying the original
+				if (fields.option) {
+					try {
+						// Check if fields.constitution is an array
+						if (Array.isArray(fields.option)) {
+							updatedFields.option = JSON.parse(fields.option[0]);
+						} else {
+							updatedFields.option = JSON.parse(fields.option[0]);
+						}
+					} catch (error) {
+						console.warn("Error parsing constitution field:", error);
+					}
+				}
+
+				// Ensure that the option is correctly extracted
+				if (fields.option) {
+					updatedFields.option = Array.isArray(fields.option)
+						? [fields.option[0]]
+						: fields.option;
+				}
+
+				resolve({ fields: updatedFields, files });
 			}
 		});
 	});

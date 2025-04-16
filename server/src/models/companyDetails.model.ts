@@ -33,7 +33,8 @@ export interface ICompanyDetails extends Document {
 		text: string;
 	};
 	constitution?: {
-		option: "i" | "ii" | "iii";
+		option: 1 | 2 | 3;
+		description: string;
 		fileId: mongoose.Types.ObjectId;
 		text: string;
 	};
@@ -76,9 +77,11 @@ const CompanyDetailsSchema: Schema = new Schema(
 		},
 		constitution: {
 			option: {
-				type: String,
-				enum: ["i", "ii", "iii"],
+				type: Number,
+				enum: [1, 2, 3],
+				required: true,
 			},
+			description: { type: String },
 			fileId: { type: Schema.Types.ObjectId, ref: "File" },
 			text: { type: String },
 		},
