@@ -24,11 +24,15 @@ export const createFileDocument = async (
 };
 
 export const parseForm = (req: any): Promise<{ fields: any; files: Files }> => {
+	logger.info("----------", req);
 	const form = new IncomingForm({
 		keepExtensions: true,
 		maxFileSize: 10 * 1024 * 1024, // 10MB
 		multiples: true,
 	});
+
+	// Add logging to inspect the request
+	console.log("Incoming request headers:", req.headers);
 
 	return new Promise((resolve, reject) => {
 		form.parse(req, (err, fields, files) => {

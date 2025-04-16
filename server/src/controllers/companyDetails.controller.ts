@@ -7,6 +7,7 @@ import {
 	getCompanyDetails as getCompanyDetailsService,
 	updateCompanyDetails as updateCompanyDetailsService,
 } from "../services/companyDetails.service";
+import { ICompanyDetails } from "../models/companyDetails.model";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -55,18 +56,18 @@ export const getCompanyDetails = async (
 };
 
 export const updateCompanyDetails = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 	next: NextFunction
-): Promise<void> => {
+): Promise<Response | void> => {
 	logger.info("Received request to update company details", {
 		id: req.params.id,
 	});
 	try {
-		const companyDetailsData: Partial<CompanyDetailsInput> = req.body;
+		const companyDetailsData: ICompanyDetails = req.body; // Ensure this is correct
 		const companyDetails = await updateCompanyDetailsService(
-			req.params.id,
-			companyDetailsData
+			req.params.id, // Ensure this ID is valid
+			req.body
 		);
 
 		res.status(200).json({
