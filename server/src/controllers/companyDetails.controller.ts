@@ -64,11 +64,8 @@ export const updateCompanyDetails = async (
 		id: req.params.id,
 	});
 	try {
-		const companyDetailsData: ICompanyDetails = req.body; // Ensure this is correct
-		const companyDetails = await updateCompanyDetailsService(
-			req.params.id, // Ensure this ID is valid
-			req.body
-		);
+		const companyDetails = await updateCompanyDetailsService(req);
+		// Note: we're now just passing the req object, similar to create API
 
 		res.status(200).json({
 			success: true,

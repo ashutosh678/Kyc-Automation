@@ -184,13 +184,11 @@ export const getCompanyDetails = async (
 };
 
 export const updateCompanyDetails = async (
-	id: string,
-	req: AuthenticatedRequest // Accept the request to handle files
+	req: AuthenticatedRequest
 ): Promise<ICompanyDetails> => {
-	logger.info("Updating company details", { id });
+	logger.info("Updating company details", { id: req.params.id });
 
 	const userId = req.user?.userId;
-	logger.info("-----userId--------", userId);
 	if (!userId) {
 		throw new Error("User ID is required");
 	}
@@ -199,37 +197,34 @@ export const updateCompanyDetails = async (
 	const { fields, files } = await parseForm(req);
 	logger.info("Parsed form data for update", { fields, files });
 
-	// Handle file uploads
-	const { uploadedFiles, fileIds, fileTexts } =
-		await uploadFilesAndCreateDocuments(files);
+	// Upload files and create documents
+	const { fileIds, fileTexts } = await uploadFilesAndCreateDocuments(files);
 
-	const companyDetailsData: Partial<CompanyDetailsInput> = {};
+	const companyDetailsData: Partial<CompanyDetailsInput> = {
+		userId, // Include userId in the update data
+	};
 
 	// Handle the constitution field
 	if (fields.option) {
-		const option = fields.option[0]; // Get option from the request body
+		const option = fields.option[0];
 
-		// Check if option is provided
 		if (!option) {
 			logger.error("Constitution option is required but not provided.");
 			throw new Error("Constitution option is required.");
 		}
 
-		// Access the option directly
 		const optionValue = Array.isArray(option) ? option[0] : option;
 
-		// Generate the description using the AI service
-		const descriptionPrompt = prompts.constitution; // Use the appropriate prompt
+		const descriptionPrompt = prompts.constitution;
 		const descriptionText = await googleGeminiService.summarizeText(
 			fileTexts[FileType.CONSTITUTION] || "",
 			descriptionPrompt
 		);
 
-		// Add the constitution data
 		companyDetailsData.constitution = {
-			option: Number(optionValue) as ConstitutionOption, // Ensure option is converted to the enum
-			description: descriptionText, // Use the generated description
-			fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]), // Assuming you still want to keep the fileId
+			option: Number(optionValue) as ConstitutionOption,
+			description: descriptionText,
+			fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
 			text: fileTexts[FileType.CONSTITUTION] || "",
 		};
 	}
@@ -281,13 +276,13 @@ export const updateCompanyDetails = async (
 	]);
 
 	const updatedCompanyDetails = await CompanyDetails.findByIdAndUpdate(
-		id,
+		req.params.id,
 		companyDetailsData,
 		{ new: true, runValidators: true }
 	);
 
 	if (!updatedCompanyDetails) {
-		logger.warn("Company details not found for update", { id });
+		logger.warn("Company details not found for update", { id: req.params.id });
 		throw new Error("Company details not found");
 	}
 
