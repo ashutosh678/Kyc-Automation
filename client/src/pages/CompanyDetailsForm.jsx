@@ -24,7 +24,7 @@ const CompanyDetailsForm = () => {
 
 	// Initialize with default values
 	const [formData, setFormData] = useState({
-		// Remove all text fields
+		constitutionOption: "",
 	});
 
 	const [files, setFiles] = useState({
@@ -88,7 +88,11 @@ const CompanyDetailsForm = () => {
 	};
 
 	const handleInputChange = (e) => {
-		// Remove handleInputChange function
+		const { name, value } = e.target;
+		setFormData((prevData) => ({
+			...prevData,
+			[name]: value,
+		}));
 	};
 
 	const handleFileChange = (e) => {
@@ -385,7 +389,7 @@ const CompanyDetailsForm = () => {
 										? "bg-blue-600 text-white ring-4 ring-blue-100"
 										: "bg-gray-200 text-gray-600"
 								}
-              `}
+        		`}
 								>
 									{currentStep > step.number ? (
 										<svg
@@ -580,12 +584,57 @@ const CompanyDetailsForm = () => {
 										preview={filePreview.financialYearEnd}
 									/>
 
-									<FileUploadField
-										name="constitution"
-										label="Constitution Document"
-										file={files.constitution}
-										preview={filePreview.constitution}
-									/>
+									<div>
+										<div>
+											<FileUploadField
+												name="constitution"
+												label="Constitution Document"
+												file={files.constitution}
+												preview={filePreview.constitution}
+											/>
+											<div>
+												<select
+													name="constitutionOption"
+													value={formData.constitutionOption}
+													onChange={handleInputChange}
+													className="w-full mt-4 px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+													required
+												>
+													<option value="">Select Constitution Option</option>
+													<option value="1">Standard Constitution</option>
+													<option value="2">Modified Constitution</option>
+													<option value="3">Custom Constitution</option>
+												</select>
+												<p className="text-xs text-gray-500 mt-1">
+													Select the constitution option that best fits your
+													company structure
+												</p>
+											</div>
+										</div>
+									</div>
+
+									{/* <div>
+										<label className="block text-gray-700 font-medium mb-2">
+											Constitution Option{" "}
+											<span className="text-red-500">*</span>
+										</label>
+										<select
+											name="constitutionOption"
+											value={formData.constitutionOption}
+											onChange={handleInputChange}
+											className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+											required
+										>
+											<option value="">Select Constitution Option</option>
+											<option value="1">Standard Constitution</option>
+											<option value="2">Modified Constitution</option>
+											<option value="3">Custom Constitution</option>
+										</select>
+										<p className="text-xs text-gray-500 mt-1">
+											Select the constitution option that best fits your company
+											structure
+										</p>
+									</div> */}
 								</div>
 							</div>
 						</div>
@@ -639,27 +688,6 @@ const CompanyDetailsForm = () => {
 							</button>
 						)}
 					</div>
-
-					{/* Add this inside your form JSX */}
-					<select
-						name="constitutionOption"
-						value={formData.constitutionOption}
-						onChange={(e) =>
-							setFormData({ ...formData, constitutionOption: e.target.value })
-						}
-						required
-					>
-						<option value="">Select Constitution Option</option>
-						<option value="1">
-							(i) the model Constitution in the Companies Act in force from time
-							to time
-						</option>
-						<option value="2">
-							(ii) the model Constitution in the Companies Act currently in
-							force
-						</option>
-						<option value="3">(iii) a custom Constitution</option>
-					</select>
 				</form>
 			</div>
 		</div>
