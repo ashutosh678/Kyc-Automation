@@ -68,7 +68,8 @@ Navigate to the `server` directory and start the server:
 
 ```bash
 cd server
-npm start
+npm install
+npm run dev
 ```
 
 ### Frontend
@@ -77,6 +78,7 @@ Navigate to the `client` directory and start the React app:
 
 ```bash
 cd client
+npm install
 npm start
 ```
 
