@@ -47,21 +47,24 @@ export const createCompanyDetails = async (
 
 		const optionValue = Array.isArray(option) ? option[0] : option;
 
-		const descriptionPrompt = prompts.constitution;
-		const descriptionText = await googleGeminiService.summarizeText(
-			fileTexts[FileType.CONSTITUTION] || "",
-			descriptionPrompt
-		);
+		if (fileIds[FileType.CONSTITUTION]) {
+			const descriptionPrompt = prompts.constitution;
+			const descriptionText = await googleGeminiService.summarizeText(
+				fileTexts[FileType.CONSTITUTION] || "",
+				descriptionPrompt
+			);
 
-		companyDetailsData.constitution = {
-			option: Number(optionValue) as ConstitutionOption,
-			description: descriptionText,
-			fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
-			text: fileTexts[FileType.CONSTITUTION] || "",
-		};
+			companyDetailsData.constitution = {
+				option: Number(optionValue) as ConstitutionOption,
+				description: descriptionText,
+				fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
+				text: fileTexts[FileType.CONSTITUTION] || "",
+			};
+		} else {
+			logger.warn("Constitution document is not provided.");
+		}
 	} else {
-		logger.error("Constitution's option field is required but not provided.");
-		throw new Error("Constitution field is required.");
+		logger.warn("Constitution's option field is not provided.");
 	}
 
 	await Promise.all([
@@ -166,18 +169,24 @@ export const updateCompanyDetails = async (
 
 		const optionValue = Array.isArray(option) ? option[0] : option;
 
-		const descriptionPrompt = prompts.constitution;
-		const descriptionText = await googleGeminiService.summarizeText(
-			fileTexts[FileType.CONSTITUTION] || "",
-			descriptionPrompt
-		);
+		if (fileIds[FileType.CONSTITUTION]) {
+			const descriptionPrompt = prompts.constitution;
+			const descriptionText = await googleGeminiService.summarizeText(
+				fileTexts[FileType.CONSTITUTION] || "",
+				descriptionPrompt
+			);
 
-		companyDetailsData.constitution = {
-			option: Number(optionValue) as ConstitutionOption,
-			description: descriptionText,
-			fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
-			text: fileTexts[FileType.CONSTITUTION] || "",
-		};
+			companyDetailsData.constitution = {
+				option: Number(optionValue) as ConstitutionOption,
+				description: descriptionText,
+				fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
+				text: fileTexts[FileType.CONSTITUTION] || "",
+			};
+		} else {
+			logger.warn("Constitution document is not provided.");
+		}
+	} else {
+		logger.warn("Constitution's option field is not provided.");
 	}
 
 	await Promise.all([

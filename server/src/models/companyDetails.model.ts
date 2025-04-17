@@ -79,7 +79,6 @@ const CompanyDetailsSchema: Schema = new Schema(
 			option: {
 				type: Number,
 				enum: [1, 2, 3],
-				required: true,
 			},
 			description: { type: String },
 			fileId: { type: Schema.Types.ObjectId, ref: "File" },

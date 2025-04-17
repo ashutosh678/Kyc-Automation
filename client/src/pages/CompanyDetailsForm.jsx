@@ -147,11 +147,7 @@ const CompanyDetailsForm = () => {
 		setError("");
 		setSuccess("");
 
-		// Remove form validation for text inputs
-		if (id && !files.constitution && !filePreview.constitution) {
-			setError("Constitution document is required for AI processing");
-			return;
-		}
+		console.log("Form can be submitted without files");
 
 		const formPayload = new FormData();
 
@@ -169,6 +165,7 @@ const CompanyDetailsForm = () => {
 
 		try {
 			setIsLoading(true);
+			console.log("Submitting form...");
 			let response;
 
 			if (id) {
@@ -178,6 +175,8 @@ const CompanyDetailsForm = () => {
 				response = await companyService.createCompanyDetails(formPayload);
 				setSuccess("Your KYC documents have been submitted successfully!");
 			}
+
+			console.log("Form submitted successfully");
 
 			setTimeout(() => {
 				if (response.data && response.data._id) {
@@ -583,7 +582,6 @@ const CompanyDetailsForm = () => {
 										label="Constitution Document"
 										file={files.constitution}
 										preview={filePreview.constitution}
-										required={true}
 									/>
 								</div>
 							</div>
