@@ -14,6 +14,7 @@ import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import { prompts } from "../types/prompts";
 import { GoogleGeminiService } from "./googleAI.service";
 import { addField } from "../helper/companyDetails.helper";
+import { isFileSame } from "../helper/companyDetails.helper";
 
 const googleGeminiService = new GoogleGeminiService();
 
@@ -160,6 +161,12 @@ export const updateCompanyDetails = async (
 		userId,
 	};
 
+	const existingCompanyDetails = await CompanyDetails.findById(req.params.id);
+
+	if (!existingCompanyDetails) {
+		throw new Error("Company details not found");
+	}
+
 	if (fields.option) {
 		const option = fields.option[0];
 
@@ -170,7 +177,20 @@ export const updateCompanyDetails = async (
 
 		const optionValue = Array.isArray(option) ? option[0] : option;
 
-		if (fileIds[FileType.CONSTITUTION]) {
+		companyDetailsData.constitution = {
+			...existingCompanyDetails.constitution,
+			option: Number(optionValue) as ConstitutionOption,
+			description: existingCompanyDetails.constitution?.description || "",
+			fileId:
+				existingCompanyDetails.constitution?.fileId ||
+				new mongoose.Types.ObjectId(),
+		};
+
+		const newFileId = fileIds[FileType.CONSTITUTION]
+			? new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION])
+			: existingCompanyDetails.constitution?.fileId;
+
+		if (!isFileSame(existingCompanyDetails.constitution?.fileId, newFileId)) {
 			const descriptionPrompt = prompts.constitution;
 			const descriptionText = await googleGeminiService.summarizeText(
 				fileTexts[FileType.CONSTITUTION] || "",
@@ -178,13 +198,17 @@ export const updateCompanyDetails = async (
 			);
 
 			companyDetailsData.constitution = {
-				option: Number(optionValue) as ConstitutionOption,
-				description: descriptionText,
-				fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
+				...companyDetailsData.constitution,
+				description: descriptionText || "",
+				fileId:
+					new mongoose.Types.ObjectId(newFileId) ||
+					new mongoose.Types.ObjectId(
+						existingCompanyDetails.constitution?.fileId
+					),
 				text: fileTexts[FileType.CONSTITUTION] || "",
 			};
 		} else {
-			logger.warn("Constitution document is not provided.");
+			logger.info("Constitution file is the same, not updating.");
 		}
 	} else {
 		logger.warn("Constitution's option field is not provided.");

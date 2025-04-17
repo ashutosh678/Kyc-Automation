@@ -48,3 +48,23 @@ export const addField = async (
 		logger.warn(`Field ${fieldKey} not found in uploaded files`);
 	}
 };
+
+/**
+ * Checks if the uploaded file is the same as the existing file.
+ * @param existingFileId - The existing file ID.
+ * @param newFileId - The new file ID.
+ * @returns True if the files are the same, otherwise false.
+ */
+export const isFileSame = (
+	existingFileId: mongoose.Types.ObjectId | undefined,
+	newFileId: mongoose.Types.ObjectId | undefined
+): boolean => {
+	if (!existingFileId || !newFileId) {
+		return false;
+	}
+	const isSame = existingFileId.toString() === newFileId.toString();
+	if (isSame) {
+		logger.info("The uploaded file is the same as the existing file.");
+	}
+	return isSame;
+};
