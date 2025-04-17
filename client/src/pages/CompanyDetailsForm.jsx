@@ -598,7 +598,6 @@ const CompanyDetailsForm = () => {
 													value={formData.constitutionOption}
 													onChange={handleInputChange}
 													className="w-full mt-4 px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
-													required
 												>
 													<option value="">Select Constitution Option</option>
 													<option value="1">Standard Constitution</option>
