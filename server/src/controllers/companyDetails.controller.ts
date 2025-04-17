@@ -6,6 +6,7 @@ import {
 	getCompanyDetails as getCompanyDetailsService,
 	updateCompanyDetails as updateCompanyDetailsService,
 } from "../services/companyDetails.service";
+import { decodeToken } from "../utils/jwt";
 
 export const createCompanyDetails = async (
 	req: AuthenticatedRequest,
@@ -38,7 +39,15 @@ export const getCompanyDetails = async (
 	logger.info("Received request to get company details", { id: req.params.id });
 
 	try {
-		const companyDetails = await getCompanyDetailsService(req.params.id);
+		let userId = req.params.id;
+
+		if (!userId) {
+			// Extract userId from token
+			const decodedToken = decodeToken(req.cookies.authToken);
+			userId = decodedToken.userId;
+		}
+
+		const companyDetails = await getCompanyDetailsService(userId);
 		res.status(200).json({
 			success: true,
 			data: companyDetails,
@@ -61,6 +70,7 @@ export const updateCompanyDetails = async (
 	logger.info("Received request to update company details", {
 		id: req.params.id,
 	});
+
 	try {
 		const companyDetails = await updateCompanyDetailsService(req);
 

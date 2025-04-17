@@ -7,6 +7,8 @@ import { FileType } from "../enums/fileTypes.enum";
 import { IncomingForm, Files } from "formidable";
 import File from "../models/file.model";
 import { logger } from "../utils/logger";
+import { decodeToken } from "../utils/jwt";
+import Company from "../models/companyDetails.model";
 
 const cloudinaryService = new CloudinaryService();
 
@@ -135,4 +137,19 @@ export const extractTextFromFiles = async (
 	}
 
 	return fileTexts;
+};
+
+export const getCompanyDetails = async (id: string | null, token: string) => {
+	let userId = id;
+
+	if (!userId) {
+		// Extract userId from token
+		const decodedToken = decodeToken(token); // Assume decodeToken is a function that decodes the JWT
+		userId = decodedToken.userId;
+	}
+
+	// Use userId to query the database
+	const companyDetails = await Company.findOne({ userId });
+
+	return companyDetails;
 };
