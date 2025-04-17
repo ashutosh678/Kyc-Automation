@@ -39,6 +39,7 @@ export const createCompanyDetails = async (
 
 	if (fields.option) {
 		const option = fields.option[0];
+		logger.info("---------------------Constitution option", { option });
 
 		if (!option) {
 			logger.error("Constitution option is required but not provided.");

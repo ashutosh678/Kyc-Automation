@@ -158,6 +158,9 @@ const CompanyDetailsForm = () => {
 			}
 		});
 
+		// Append the selected constitution option
+		formPayload.append("option", formData.constitutionOption);
+
 		// If updating, include the ID
 		if (id) {
 			formPayload.append("id", id);
@@ -636,6 +639,27 @@ const CompanyDetailsForm = () => {
 							</button>
 						)}
 					</div>
+
+					{/* Add this inside your form JSX */}
+					<select
+						name="constitutionOption"
+						value={formData.constitutionOption}
+						onChange={(e) =>
+							setFormData({ ...formData, constitutionOption: e.target.value })
+						}
+						required
+					>
+						<option value="">Select Constitution Option</option>
+						<option value="1">
+							(i) the model Constitution in the Companies Act in force from time
+							to time
+						</option>
+						<option value="2">
+							(ii) the model Constitution in the Companies Act currently in
+							force
+						</option>
+						<option value="3">(iii) a custom Constitution</option>
+					</select>
 				</form>
 			</div>
 		</div>
