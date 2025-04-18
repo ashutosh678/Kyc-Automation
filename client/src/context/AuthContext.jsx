@@ -31,10 +31,18 @@ export const AuthProvider = ({ children }) => {
 		}
 	};
 
-	const handleLogout = () => {
-		setUser(null);
-		setIsAuthenticated(false);
-		navigate("/login");
+	const handleLogout = async () => {
+		try {
+			await authService.logout();
+		} catch (error) {
+			console.error("Logout error:", error);
+		} finally {
+			// Always clear the local state regardless of server response
+			setUser(null);
+			setIsAuthenticated(false);
+			// Navigate to login page
+			navigate("/login", { replace: true });
+		}
 	};
 
 	const login = async (credentials) => {
@@ -57,15 +65,8 @@ export const AuthProvider = ({ children }) => {
 		}
 	};
 
-	const logout = async () => {
-		try {
-			await authService.logout();
-			handleLogout();
-		} catch (error) {
-			console.error("Logout failed:", error);
-			// Still logout the user on the frontend even if the server request fails
-			handleLogout();
-		}
+	const logout = () => {
+		handleLogout();
 	};
 
 	return (

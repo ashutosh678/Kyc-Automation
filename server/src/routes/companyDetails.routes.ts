@@ -8,7 +8,6 @@ import {
 const router = Router();
 
 router.post("/", createCompanyDetails);
-router.get("/:id", getCompanyDetails);
 router.get("/", getCompanyDetails);
 router.put("/:id", updateCompanyDetails);
 

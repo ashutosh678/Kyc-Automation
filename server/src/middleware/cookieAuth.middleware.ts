@@ -19,8 +19,14 @@ export const cookieAuthMiddleware = (
 	const token = req.cookies.authToken;
 
 	if (!token) {
-		logger.warn("No auth token in cookies");
-		return res.status(401).json({ message: "Unauthorized: No token provided" });
+		// Don't log a warning for common auth check endpoints
+		if (!req.path.includes("/auth/check")) {
+			logger.warn("No auth token in cookies");
+		}
+		return res.status(401).json({
+			success: false,
+			message: "Unauthorized: No token provided",
+		});
 	}
 
 	try {
@@ -33,6 +39,9 @@ export const cookieAuthMiddleware = (
 	} catch (err) {
 		logger.error("Token verification failed:", err);
 		res.clearCookie("authToken");
-		return res.status(403).json({ message: "Forbidden: Invalid token" });
+		return res.status(401).json({
+			success: false,
+			message: "Unauthorized: Invalid token",
+		});
 	}
 };
