@@ -59,13 +59,23 @@ export const getCompanyDetails = async (
 	next: NextFunction
 ): Promise<void> => {
 	try {
-		if (!req.user?.userId) {
-			throw new Error("User not authenticated");
+		const userId = req.user?.userId;
+
+		if (!userId) {
+			logger.warn("User not authenticated");
+			res.status(401).json({
+				success: false,
+				message: "User not authenticated",
+			});
+			return;
 		}
 
-		const companyDetails = await getCompanyDetailsService(req.user.userId);
+		logger.info("Fetching company details for user", { userId });
+
+		const companyDetails = await getCompanyDetailsService(userId);
 
 		if (!companyDetails) {
+			logger.info("No company details found", { userId });
 			res.status(404).json({
 				success: false,
 				message: "No company details found",
@@ -77,13 +87,17 @@ export const getCompanyDetails = async (
 			success: true,
 			data: companyDetails,
 		});
-	} catch (error: unknown) {
-		logger.error("Error fetching company details", { error });
-		if (error instanceof Error) {
-			next(new Error(error.message));
-		} else {
-			next(new Error("An unknown error occurred"));
-		}
+	} catch (error) {
+		logger.error("Error fetching company details", {
+			error: error instanceof Error ? error.message : error,
+		});
+
+		// Pass a more descriptive error to the next middleware
+		next(
+			new Error(
+				error instanceof Error ? error.message : "An unknown error occurred"
+			)
+		);
 	}
 };
 

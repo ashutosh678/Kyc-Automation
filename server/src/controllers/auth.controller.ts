@@ -56,6 +56,7 @@ export const login = async (req: Request, res: Response) => {
 				userId: user._id,
 				email: user.email,
 			},
+			token: token,
 		});
 	} catch (error) {
 		logger.error("Login error:", error);

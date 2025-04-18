@@ -151,11 +151,9 @@ const CompanyDetailsForm = () => {
 		setError("");
 		setSuccess("");
 
-		console.log("Form can be submitted without files");
-
 		const formPayload = new FormData();
 
-		// Add files - this is critical as the backend extracts text from these files
+		// Add files
 		Object.entries(files).forEach(([key, file]) => {
 			if (file) {
 				formPayload.append(key, file);
@@ -163,7 +161,9 @@ const CompanyDetailsForm = () => {
 		});
 
 		// Append the selected constitution option
-		formPayload.append("option", formData.constitutionOption);
+		if (files.constitution) {
+			formPayload.append("option", formData.constitutionOption);
+		}
 
 		// If updating, include the ID
 		if (id) {
@@ -185,14 +185,9 @@ const CompanyDetailsForm = () => {
 
 			console.log("Form submitted successfully");
 
+			// Update navigation to always go to /company-details
 			setTimeout(() => {
-				if (response.data && response.data._id) {
-					navigate(`/company-details/${response.data._id}`);
-				} else if (id) {
-					navigate(`/company-details/${id}`);
-				} else {
-					navigate("/company-details");
-				}
+				navigate("/company-details");
 			}, 2000);
 		} catch (err) {
 			console.error("Error submitting company details:", err);

@@ -28,6 +28,10 @@ const companyService = {
 				// Handle unauthorized error silently
 				return null;
 			}
+			if (error.response?.status === 404) {
+				// Handle not found case
+				return { data: null };
+			}
 			throw error.response ? error.response.data : new Error("Network error");
 		}
 	},

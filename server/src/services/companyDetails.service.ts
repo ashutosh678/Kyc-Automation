@@ -163,22 +163,9 @@ export const createCompanyDetails = async (
 	}
 };
 
-export const getCompanyDetails = async (
-	id: string
-): Promise<ICompanyDetails | null> => {
-	logger.info("Fetching company details", { id });
-	let companyDetails;
-	companyDetails = await CompanyDetails.findById(id)
-		.populate("intendedCompanyName.fileId")
-		.populate("alternativeCompanyName1.fileId")
-		.populate("alternativeCompanyName2.fileId")
-		.populate("companyActivities.fileId")
-		.populate("intendedRegisteredAddress.fileId")
-		.populate("financialYearEnd.fileId")
-		.populate("constitution.fileId");
-
-	if (!companyDetails) {
-		companyDetails = await CompanyDetails.findById({ userId: id })
+export const getCompanyDetails = async (userId: string) => {
+	try {
+		const companyDetails = await CompanyDetails.findOne({ userId })
 			.populate("intendedCompanyName.fileId")
 			.populate("alternativeCompanyName1.fileId")
 			.populate("alternativeCompanyName2.fileId")
@@ -187,11 +174,10 @@ export const getCompanyDetails = async (
 			.populate("financialYearEnd.fileId")
 			.populate("constitution.fileId");
 
-		logger.warn("Company details not found", { id });
-		throw new Error("Company details not found");
+		return companyDetails;
+	} catch (error) {
+		throw new Error(`Error fetching company details: ${error}`);
 	}
-
-	return companyDetails;
 };
 
 export const updateCompanyDetails = async (
