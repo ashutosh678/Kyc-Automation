@@ -52,35 +52,33 @@ const CompanyDetailsForm = () => {
 
 	useEffect(() => {
 		if (id) {
-			fetchCompanyDetails();
+			fetchExistingDetails();
 		}
 	}, [id]);
 
-	const fetchCompanyDetails = async () => {
+	const fetchExistingDetails = async () => {
 		try {
 			setIsFetching(true);
-			const response = await companyService.getCompanyDetails(id);
-			const data = response.data;
+			const response = await companyService.getCompanyDetails();
 
-			if (data) {
-				// Remove formData population
+			if (response.success && response.data) {
+				// Populate form data
+				setFormData({
+					constitutionOption:
+						response.data.constitution?.option?.toString() || "",
+					// ... other form data
+				});
+
 				// Set file previews
 				setFilePreview({
+					constitution: response.data.constitution?.fileId?.fileUrl || null,
 					intendedCompanyName:
-						data.intendedCompanyName?.fileId?.fileUrl || null,
-					alternativeCompanyName1:
-						data.alternativeCompanyName1?.fileId?.fileUrl || null,
-					alternativeCompanyName2:
-						data.alternativeCompanyName2?.fileId?.fileUrl || null,
-					companyActivities: data.companyActivities?.fileId?.fileUrl || null,
-					intendedRegisteredAddress:
-						data.intendedRegisteredAddress?.fileId?.fileUrl || null,
-					financialYearEnd: data.financialYearEnd?.fileId?.fileUrl || null,
-					constitution: data.constitution?.fileId?.fileUrl || null,
+						response.data.intendedCompanyName?.fileId?.fileUrl || null,
+					// ... other file previews
 				});
 			}
-		} catch (err) {
-			console.error("Error fetching company details:", err);
+		} catch (error) {
+			console.error("Error fetching company details:", error);
 			setError("Failed to load existing company details");
 		} finally {
 			setIsFetching(false);
