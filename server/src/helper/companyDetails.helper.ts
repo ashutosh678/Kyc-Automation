@@ -12,9 +12,25 @@ export const addField = async (
 	fieldKey: FileType,
 	fieldName: string,
 	fileIds: any,
-	fileTexts: any
+	fileTexts: any,
+	existingDetails?: any
 ) => {
 	if (fileIds[fieldKey]) {
+		// Check if we should preserve existing file
+		if (
+			existingDetails?.[fieldKey]?.fileId &&
+			isFileSame(
+				existingDetails[fieldKey].fileId,
+				new mongoose.Types.ObjectId(fileIds[fieldKey])
+			)
+		) {
+			// Preserve existing data
+			companyDetailsData[fieldKey] = {
+				...existingDetails[fieldKey],
+			};
+			return;
+		}
+
 		const prompt = `${prompts[fieldKey]}\n\nPlease return only the value for "${fieldName}" without any additional formatting.`;
 		const textToSummarize = fileTexts[fieldKey] || "";
 
@@ -28,10 +44,10 @@ export const addField = async (
 		let parsedValue;
 		try {
 			const jsonResponse = JSON.parse(fieldValue);
-			parsedValue = jsonResponse[fieldName]; // Extract the specific field value
+			parsedValue = jsonResponse[fieldName];
 		} catch (error) {
 			logger.error("Error parsing JSON response", { fieldValue, error });
-			parsedValue = fieldValue; // Fallback to raw value if parsing fails
+			parsedValue = fieldValue;
 		}
 
 		// Only add the field if it has a value
@@ -40,10 +56,15 @@ export const addField = async (
 				fileId: new mongoose.Types.ObjectId(fileIds[fieldKey]),
 				text: fileTexts[fieldKey] || "",
 				[fieldName]: parsedValue,
-			} as any;
+			};
 		} else {
 			logger.warn(`Field ${fieldName} is empty and will not be added.`);
 		}
+	} else if (existingDetails?.[fieldKey]) {
+		// Preserve existing data if no new file is uploaded
+		companyDetailsData[fieldKey] = {
+			...existingDetails[fieldKey],
+		};
 	} else {
 		logger.warn(`Field ${fieldKey} not found in uploaded files`);
 	}

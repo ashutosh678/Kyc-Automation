@@ -1,10 +1,34 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FilePlus, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import companyService from "../services/companyService";
 
 const Home = () => {
 	const { isAuthenticated } = useAuth();
+	const navigate = useNavigate();
+	const [loading, setLoading] = useState(false);
+
+	const handleVerificationClick = async () => {
+		try {
+			setLoading(true);
+			const response = await companyService.getCompanyDetails();
+
+			if (response.success && response.data) {
+				// If company details exist, navigate to update form
+				navigate(`/company-details-form/${response.data._id}`);
+			} else {
+				// If no company details exist, navigate to new form
+				navigate("/company-details-form");
+			}
+		} catch (error) {
+			console.error("Error checking company details:", error);
+			// If there's an error, default to new form
+			navigate("/company-details-form");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	return (
 		<div>
@@ -24,13 +48,14 @@ const Home = () => {
 							</p>
 
 							{isAuthenticated ? (
-								<Link
-									to="/company-details-form"
-									className="inline-flex items-center bg-white text-indigo-800 px-8 py-4 rounded-md font-semibold hover:bg-blue-100 transition shadow-lg"
+								<button
+									onClick={handleVerificationClick}
+									disabled={loading}
+									className="inline-flex items-center bg-white text-indigo-800 px-8 py-4 rounded-md font-semibold hover:bg-blue-100 transition shadow-lg disabled:opacity-70"
 								>
-									<FilePlus size={20} className="mr-2" /> Start Verification
-									Process
-								</Link>
+									<FilePlus size={20} className="mr-2" />
+									{loading ? "Loading..." : "Start Verification Process"}
+								</button>
 							) : (
 								<div className="flex flex-col sm:flex-row gap-4">
 									<Link

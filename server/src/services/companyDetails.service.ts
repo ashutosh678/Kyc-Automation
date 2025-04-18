@@ -22,6 +22,15 @@ export const createCompanyDetails = async (
 	req: AuthenticatedRequest
 ): Promise<ICompanyDetails> => {
 	logger.info("Creating company details");
+
+	const userId = req.user?.userId;
+	if (!userId) {
+		throw new Error("User ID is required");
+	}
+
+	// Check if company details already exist for this user
+	const existingDetails = await CompanyDetails.findOne({ userId });
+
 	const { fields, files } = await parseForm(req);
 	logger.info("Parsed form data", { fields, files });
 
@@ -29,18 +38,13 @@ export const createCompanyDetails = async (
 	const { fileIds, fileTexts } = await uploadFilesAndCreateDocuments(files);
 	logger.info("Uploaded files and created documents", { fileIds });
 
-	const userId = req.user?.userId;
-	if (!userId) {
-		throw new Error("User ID is required");
-	}
-
 	const companyDetailsData: Partial<CompanyDetailsInput> = {
 		userId,
 	};
 
 	if (fields.option) {
 		const option = fields.option[0];
-		logger.info("---------------------Constitution option", { option });
+		logger.info("Constitution option", { option });
 
 		if (!option) {
 			logger.error("Constitution option is required but not provided.");
@@ -50,93 +54,118 @@ export const createCompanyDetails = async (
 		const optionValue = Array.isArray(option) ? option[0] : option;
 
 		if (fileIds[FileType.CONSTITUTION]) {
-			const descriptionPrompt = prompts.constitution;
-			const descriptionText = await googleGeminiService.summarizeText(
-				fileTexts[FileType.CONSTITUTION] || "",
-				descriptionPrompt
-			);
+			// Check if existing constitution file should be preserved
+			if (
+				existingDetails?.constitution?.fileId &&
+				isFileSame(
+					existingDetails.constitution.fileId,
+					new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION])
+				)
+			) {
+				companyDetailsData.constitution = {
+					...existingDetails.constitution,
+					option: Number(optionValue) as ConstitutionOption,
+				};
+			} else {
+				// Process new constitution file
+				const descriptionPrompt = prompts.constitution;
+				const descriptionText = await googleGeminiService.summarizeText(
+					fileTexts[FileType.CONSTITUTION] || "",
+					descriptionPrompt
+				);
 
+				companyDetailsData.constitution = {
+					option: Number(optionValue) as ConstitutionOption,
+					description: descriptionText,
+					fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
+					text: fileTexts[FileType.CONSTITUTION] || "",
+				};
+			}
+		} else if (existingDetails?.constitution) {
+			// Preserve existing constitution if no new file uploaded
 			companyDetailsData.constitution = {
+				...existingDetails.constitution,
 				option: Number(optionValue) as ConstitutionOption,
-				description: descriptionText,
-				fileId: new mongoose.Types.ObjectId(fileIds[FileType.CONSTITUTION]),
-				text: fileTexts[FileType.CONSTITUTION] || "",
 			};
-		} else {
-			logger.warn("Constitution document is not provided.");
 		}
-	} else {
-		logger.warn("Constitution's option field is not provided.");
 	}
 
+	// Process other fields with file preservation logic
 	await Promise.all([
 		addField(
 			companyDetailsData,
 			FileType.INTENDED_COMPANY_NAME,
 			"name",
 			fileIds,
-			fileTexts
+			fileTexts,
+			existingDetails
 		),
 		addField(
 			companyDetailsData,
 			FileType.COMPANY_ACTIVITIES,
 			"description",
 			fileIds,
-			fileTexts
+			fileTexts,
+			existingDetails
 		),
 		addField(
 			companyDetailsData,
 			FileType.INTENDED_REGISTERED_ADDRESS,
 			"address",
 			fileIds,
-			fileTexts
+			fileTexts,
+			existingDetails
 		),
 		addField(
 			companyDetailsData,
 			FileType.FINANCIAL_YEAR_END,
 			"date",
 			fileIds,
-			fileTexts
+			fileTexts,
+			existingDetails
 		),
 		addField(
 			companyDetailsData,
 			FileType.ALTERNATIVE_COMPANY_NAME_1,
 			"name",
 			fileIds,
-			fileTexts
+			fileTexts,
+			existingDetails
 		),
 		addField(
 			companyDetailsData,
 			FileType.ALTERNATIVE_COMPANY_NAME_2,
 			"name",
 			fileIds,
-			fileTexts
+			fileTexts,
+			existingDetails
 		),
 	]);
 
-	const companyDetails = new CompanyDetails(companyDetailsData);
-	await companyDetails.save();
-
-	logger.info("Company details created successfully", { companyDetails });
-	return companyDetails;
+	if (existingDetails) {
+		// Update existing record
+		const updatedDetails = await CompanyDetails.findOneAndUpdate(
+			{ userId },
+			companyDetailsData,
+			{ new: true, runValidators: true }
+		);
+		if (!updatedDetails) {
+			throw new Error("Failed to update company details");
+		}
+		logger.info("Company details updated successfully", { updatedDetails });
+		return updatedDetails;
+	} else {
+		// Create new record
+		const companyDetails = new CompanyDetails(companyDetailsData);
+		await companyDetails.save();
+		logger.info("Company details created successfully", { companyDetails });
+		return companyDetails;
+	}
 };
 
-export const getCompanyDetails = async (
-	id: string
-): Promise<ICompanyDetails | null> => {
-	logger.info("Fetching company details", { id });
-	let companyDetails;
-	companyDetails = await CompanyDetails.findById(id)
-		.populate("intendedCompanyName.fileId")
-		.populate("alternativeCompanyName1.fileId")
-		.populate("alternativeCompanyName2.fileId")
-		.populate("companyActivities.fileId")
-		.populate("intendedRegisteredAddress.fileId")
-		.populate("financialYearEnd.fileId")
-		.populate("constitution.fileId");
-
-	if (!companyDetails) {
-		companyDetails = await CompanyDetails.findById({ userId: id })
+export const getCompanyDetails = async (userId: string) => {
+	try {
+		const companyDetails = await CompanyDetails.findOne({ userId })
 			.populate("intendedCompanyName.fileId")
 			.populate("alternativeCompanyName1.fileId")
 			.populate("alternativeCompanyName2.fileId")
@@ -145,11 +174,10 @@ export const getCompanyDetails = async (
 			.populate("financialYearEnd.fileId")
 			.populate("constitution.fileId");
 
-		logger.warn("Company details not found", { id });
-		throw new Error("Company details not found");
+		return companyDetails;
+	} catch (error) {
+		throw new Error(`Error fetching company details: ${error}`);
 	}
-
-	return companyDetails;
 };
 
 export const updateCompanyDetails = async (

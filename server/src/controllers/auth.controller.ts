@@ -56,6 +56,7 @@ export const login = async (req: Request, res: Response) => {
 				userId: user._id,
 				email: user.email,
 			},
+			token: token,
 		});
 	} catch (error) {
 		logger.error("Login error:", error);
@@ -67,6 +68,10 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = (req: Request, res: Response) => {
-	res.clearCookie("authToken");
+	res.clearCookie("authToken", {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === "production",
+		sameSite: "strict",
+	});
 	res.json({ success: true, message: "Logged out successfully" });
 };
