@@ -1,15 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { logger } from "../utils/logger";
-import { AuthenticatedRequest } from "./cookieAuth.middleware";
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_for_dev";
 
 export interface AuthenticatedRequest extends Request {
-	user?: any;
+	user?: {
+		userId: string;
+		email: string;
+	};
 }
 
-export const authenticateJWT = (
+export const cookieAuthMiddleware = (
 	req: AuthenticatedRequest,
 	res: Response,
 	next: NextFunction
@@ -29,7 +31,7 @@ export const authenticateJWT = (
 		req.user = decoded;
 		next();
 	} catch (err) {
-		logger.error(`Token verification failed: ${err.message}`);
+		logger.error("Token verification failed:", err);
 		res.clearCookie("authToken");
 		return res.status(403).json({ message: "Forbidden: Invalid token" });
 	}
