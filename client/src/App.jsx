@@ -29,7 +29,7 @@ const AppRoutes = () => {
 					}
 				/>
 				<Route
-					path="/company-details-form"
+					path="/company-details-form/:id?"
 					element={
 						<ProtectedRoute>
 							<CompanyDetailsForm />

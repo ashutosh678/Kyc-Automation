@@ -247,7 +247,7 @@ const CompanyDetailsForm = () => {
 		};
 
 		return (
-			<div>
+			<div className="mb-6">
 				<div className="flex items-center justify-between mb-2">
 					<label className="block text-gray-700 font-medium">
 						{label} {required && <span className="text-red-500">*</span>}
@@ -331,6 +331,23 @@ const CompanyDetailsForm = () => {
 							className="hidden"
 							accept=".pdf,.docx,.doc,.jpg,.jpeg,.png"
 						/>
+					</div>
+				)}
+
+				{/* Only show constitution option select when constitution file is uploaded */}
+				{name === "constitution" && (file || preview) && (
+					<div className="mt-4">
+						<select
+							name="constitutionOption"
+							value={formData.constitutionOption}
+							onChange={handleInputChange}
+							className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						>
+							<option value="">Select Constitution Type</option>
+							<option value="1">Standard Constitution</option>
+							<option value="2">Modified Constitution</option>
+							<option value="3">Custom Constitution</option>
+						</select>
 					</div>
 				)}
 			</div>
@@ -428,6 +445,49 @@ const CompanyDetailsForm = () => {
 		);
 	};
 
+	// Step 3 content with no form wrapping
+	const renderStep3 = () => {
+		return (
+			<div>
+				<h2 className="text-xl font-semibold mb-4">Constitution Details</h2>
+				<div className="space-y-6">
+					<FileUploadField
+						name="constitution"
+						label="Constitution Document"
+						file={files.constitution}
+						preview={filePreview.constitution}
+					/>
+
+					{/* Separate constitution option select */}
+					{(files.constitution || filePreview.constitution) && (
+						<div className="mt-4">
+							<label className="block text-sm font-medium text-gray-700 mb-2">
+								Constitution Type
+							</label>
+							<select
+								name="constitutionOption"
+								value={formData.constitutionOption}
+								onChange={(e) => {
+									e.preventDefault();
+									setFormData((prev) => ({
+										...prev,
+										constitutionOption: e.target.value,
+									}));
+								}}
+								className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							>
+								<option value="">Select Constitution Type</option>
+								<option value="1">Standard Constitution</option>
+								<option value="2">Modified Constitution</option>
+								<option value="3">Custom Constitution</option>
+							</select>
+						</div>
+					)}
+				</div>
+			</div>
+		);
+	};
+
 	if (isFetching) {
 		return (
 			<div className="flex justify-center items-center h-64">
@@ -440,69 +500,29 @@ const CompanyDetailsForm = () => {
 	}
 
 	return (
-		<div>
-			<div className="mb-6 flex items-center">
-				<Link
-					to={id ? `/company-details/${id}` : "/"}
-					className="text-gray-600 hover:text-gray-900 mr-4"
-				>
-					<ChevronLeft size={20} />
-				</Link>
-				<h1 className="text-2xl font-bold text-gray-800">
-					{id ? "Update KYC Documents" : "Submit KYC Documents"}
-				</h1>
+		<div className="max-w-4xl mx-auto p-6">
+			{/* Progress bar */}
+			<div className="mb-8">
+				{renderStepIndicator({ currentStep: activeStep, totalSteps })}
 			</div>
 
+			{/* Messages */}
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 animate-fadeIn">
-					<div className="flex items-center">
-						<AlertCircle
-							className="text-red-500 mr-3 flex-shrink-0"
-							size={20}
-						/>
-						<p className="text-red-700">{error}</p>
-					</div>
+				<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+					<p className="text-red-600">{error}</p>
 				</div>
 			)}
 
 			{success && (
-				<div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 animate-fadeIn">
-					<div className="flex items-center">
-						<CheckCircle
-							className="text-green-500 mr-3 flex-shrink-0"
-							size={20}
-						/>
-						<p className="text-green-700">{success}</p>
-					</div>
+				<div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+					<p className="text-green-600">{success}</p>
 				</div>
 			)}
 
-			<div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
-				<div className="flex items-start">
-					<Info className="text-blue-500 mr-3 mt-0.5 flex-shrink-0" size={24} />
-					<div>
-						<h2 className="text-lg font-semibold text-blue-800">
-							How This Works
-						</h2>
-						<p className="text-blue-700 mt-1">
-							Our AI-powered system analyzes your uploaded documents and
-							extracts the necessary information to complete your KYC
-							verification. For best results, please upload clear, legible
-							documents.
-							<span className="block mt-2">
-								Fields marked with <span className="text-red-500">*</span> are
-								required.
-							</span>
-						</p>
-					</div>
-				</div>
-			</div>
-
-			<div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
-				<StepIndicator currentStep={activeStep} totalSteps={totalSteps} />
-
-				<form onSubmit={handleSubmit}>
-					{/* Step 1: Company Information */}
+			{/* Content */}
+			<div className="bg-white rounded-lg shadow-md p-6">
+				{/* Step content */}
+				<div className="mb-6">
 					{activeStep === 1 && (
 						<div className="space-y-8 animate-fadeIn">
 							<div>
@@ -536,7 +556,6 @@ const CompanyDetailsForm = () => {
 						</div>
 					)}
 
-					{/* Step 2: Activities and Address */}
 					{activeStep === 2 && (
 						<div className="space-y-8 animate-fadeIn">
 							<div>
@@ -563,126 +582,53 @@ const CompanyDetailsForm = () => {
 						</div>
 					)}
 
-					{/* Step 3: Financial and Constitution */}
-					{activeStep === 3 && (
-						<div className="space-y-8 animate-fadeIn">
-							<div>
-								<h3 className="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b">
-									Financial Details & Constitution
-								</h3>
+					{activeStep === 3 && renderStep3()}
+				</div>
 
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-									<FileUploadField
-										name="financialYearEnd"
-										label="Financial Year Document"
-										file={files.financialYearEnd}
-										preview={filePreview.financialYearEnd}
-									/>
-
-									<div>
-										<div>
-											<FileUploadField
-												name="constitution"
-												label="Constitution Document"
-												file={files.constitution}
-												preview={filePreview.constitution}
-											/>
-											<div>
-												<select
-													name="constitutionOption"
-													value={formData.constitutionOption}
-													onChange={handleInputChange}
-													className="w-full mt-4 px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
-												>
-													<option value="">Select Constitution Option</option>
-													<option value="1">Standard Constitution</option>
-													<option value="2">Modified Constitution</option>
-													<option value="3">Custom Constitution</option>
-												</select>
-												<p className="text-xs text-gray-500 mt-1">
-													Select the constitution option that best fits your
-													company structure
-												</p>
-											</div>
-										</div>
-									</div>
-
-									{/* <div>
-										<label className="block text-gray-700 font-medium mb-2">
-											Constitution Option{" "}
-											<span className="text-red-500">*</span>
-										</label>
-										<select
-											name="constitutionOption"
-											value={formData.constitutionOption}
-											onChange={handleInputChange}
-											className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
-											required
-										>
-											<option value="">Select Constitution Option</option>
-											<option value="1">Standard Constitution</option>
-											<option value="2">Modified Constitution</option>
-											<option value="3">Custom Constitution</option>
-										</select>
-										<p className="text-xs text-gray-500 mt-1">
-											Select the constitution option that best fits your company
-											structure
-										</p>
-									</div> */}
-								</div>
-							</div>
-						</div>
+				{/* Navigation buttons - Completely separated from form */}
+				<div className="flex justify-between mt-6">
+					{activeStep > 1 && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.preventDefault();
+								prevStep();
+							}}
+							className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+						>
+							Previous
+						</button>
 					)}
 
-					<div className="mt-8 pt-6 border-t border-gray-200 flex justify-between">
-						{activeStep > 1 ? (
+					<div className="ml-auto">
+						{activeStep < totalSteps && (
 							<button
 								type="button"
-								onClick={prevStep}
-								className="inline-flex items-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition"
+								onClick={(e) => {
+									e.preventDefault();
+									nextStep();
+								}}
+								className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
 							>
-								<ChevronLeft size={18} className="mr-2" /> Previous
+								Next
 							</button>
-						) : (
-							<Link
-								to={id ? `/company-details/${id}` : "/"}
-								className="inline-flex items-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition"
-							>
-								<ChevronLeft size={18} className="mr-2" /> Cancel
-							</Link>
 						)}
 
-						{activeStep < totalSteps ? (
+						{activeStep === totalSteps && (
 							<button
 								type="button"
-								onClick={nextStep}
-								className="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-800 transition shadow-md"
-							>
-								Next <ArrowRight size={18} className="ml-2" />
-							</button>
-						) : (
-							<button
-								type="submit"
+								onClick={(e) => {
+									e.preventDefault();
+									handleSubmit(e);
+								}}
 								disabled={isLoading}
-								className={`inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-800 transition shadow-md ${
-									isLoading ? "opacity-70 cursor-not-allowed" : ""
-								}`}
+								className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-green-400"
 							>
-								{isLoading ? (
-									<>
-										<span className="mr-2 animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></span>
-										{id ? "Updating..." : "Submitting..."}
-									</>
-								) : (
-									<>
-										<Save size={18} className="mr-2" />
-										{id ? "Update Documents" : "Submit Documents"}
-									</>
-								)}
+								{isLoading ? "Submitting..." : "Submit"}
 							</button>
 						)}
 					</div>
-				</form>
+				</div>
 			</div>
 		</div>
 	);

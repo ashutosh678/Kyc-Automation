@@ -369,7 +369,7 @@ const CompanyDetails = () => {
 
 									<div className="flex space-x-3">
 										<Link
-											to={`/company-details-form/${id}`}
+											to={`/company-details-form/${companyDetails._id}`}
 											className="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-800 transition shadow-md"
 										>
 											<Edit size={18} className="mr-2" /> Edit Details
