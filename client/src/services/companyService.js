@@ -26,13 +26,13 @@ const companyService = {
 		} catch (error) {
 			if (error.response?.status === 401) {
 				// Handle unauthorized error silently
-				return null;
+				return { success: false, message: "Unauthorized" };
 			}
 			if (error.response?.status === 404) {
 				// Handle not found case
-				return { data: null };
+				return { success: false, message: "No company details found" };
 			}
-			throw error.response ? error.response.data : new Error("Network error");
+			throw error.response?.data || new Error("Network error");
 		}
 	},
 

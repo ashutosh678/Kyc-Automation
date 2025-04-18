@@ -79,8 +79,13 @@ const CompanyDetails = () => {
 			try {
 				setLoading(true);
 				const response = await companyService.getCompanyDetails();
-				setCompanyDetails(response.data);
-				calculateCompletionStatus(response.data);
+
+				if (response.success) {
+					setCompanyDetails(response.data);
+					calculateCompletionStatus(response.data);
+				} else {
+					setError("No company details found");
+				}
 			} catch (err) {
 				console.error("Error fetching company details:", err);
 				setError("Failed to load company details");
