@@ -64,6 +64,15 @@ export const getCompanyDetails = async (
 		}
 
 		const companyDetails = await getCompanyDetailsService(req.user.userId);
+
+		if (!companyDetails) {
+			res.status(404).json({
+				success: false,
+				message: "No company details found",
+			});
+			return;
+		}
+
 		res.status(200).json({
 			success: true,
 			data: companyDetails,

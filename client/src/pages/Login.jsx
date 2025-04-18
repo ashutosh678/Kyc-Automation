@@ -35,9 +35,8 @@ const Login = () => {
 			const result = await login({ email, password });
 
 			if (result.success) {
-				// Redirect to the page they tried to visit or dashboard
-				const from = location.state?.from?.pathname || "/dashboard";
-				navigate(from, { replace: true });
+				// Redirect to home page after login
+				navigate("/", { replace: true });
 			} else {
 				setError(result.error || "Invalid credentials");
 			}
